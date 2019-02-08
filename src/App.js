@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import styled, { createGlobalStyle } from "styled-components";
+import Preset from "./components/preset";
+import audio from "./bell.mp3";
 
 const GlobalStyles = createGlobalStyle`
     html {
@@ -27,7 +29,7 @@ const GlobalStyles = createGlobalStyle`
 
 const Wrapper = styled.div`
     width: 100%;
-    max-width: 60rem;
+    max-width: 50rem;
     margin: 0 auto;
     padding: 5rem;
 `;
@@ -39,8 +41,8 @@ const Header = styled.header`
 `;
 
 const Timer = styled.div`
-    width: 20rem;
-    height: 20rem;
+    width: 22rem;
+    height: 22rem;
     border-radius: 50%;
     border: 1px solid #5ab9ea;
     font-size: 3.5rem;
@@ -53,52 +55,53 @@ const Timer = styled.div`
     line-height: 1;
 `;
 
-const Presets = styled.div`
-    display: grid;
+const PresetRow = styled.div`
+    /* display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-gap: 1rem;
+    grid-gap: 1rem; */
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    position: relative;
 `;
 
-const Preset = styled.button`
-    padding: 1rem;
-    background-color: rgba(255, 255, 255, 0.2);
-    font-size: 2rem;
-    border: 1px solid #5ab9ea;
-`;
-
-const Control = styled.button`
-    font-size: 1.4rem;
-    color: #fff;
-    padding: 0.5rem 1rem;
+const Control = styled.span`
     margin-top: 2rem;
     display: inline-block;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-width: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 17.32px solid rgba(255, 255, 255, 0.5);
+    ${props => props.running ? 'border: 10px solid rgba(255, 255, 255, 0.5);' : ''}
 `;
 
 class App extends Component {
     constructor() {
         super();
 
+        this.audio = new Audio(audio);
+
         this.state = {
             running: false,
-            seconds: 0,
-            minutes: 0,
+            defaultPreset: 1,
+            s: 0,
+            m: 0,
             secondsRemaining: 0
         };
     }
 
     componentDidMount() {
-        this.setTimer({ minutes: 10 });
+        this.setTimer({ m: 10 });
     }
 
-    setTimer({ minutes = 0, seconds = 0 }) {
+    setTimer({ m = 0, s = 0 }) {
         if (this.state.running) return;
 
         this.setState({
-            seconds,
-            minutes,
-            secondsRemaining: minutes * 60 + seconds
+            s,
+            m,
+            secondsRemaining: m * 60 + s
         });
     }
 
@@ -109,6 +112,7 @@ class App extends Component {
         } else {
             this.timerID = setInterval(() => this.tick(), 1000);
             this.setState({ running: true });
+            this.audio.play();
         }
     };
 
@@ -116,43 +120,56 @@ class App extends Component {
         let secondsRemaining = this.state.secondsRemaining;
         let min = ("0" + Math.floor(secondsRemaining / 60)).slice(-2);
         let sec = ("0" + (secondsRemaining - min * 60)).slice(-2);
-        console.log(secondsRemaining, min, sec);
 
         if ((min === "00") & (sec === "00")) {
             this.toggleControl();
         }
 
         this.setState({
-            minutes: min,
-            seconds: sec,
+            m: min,
+            s: sec,
             secondsRemaining: (secondsRemaining -= 1)
-        });        
+        });
     }
 
     render() {
         return (
             <Wrapper>
                 <GlobalStyles />
-                <Header>The Hitchhiker's Guide to Sanity</Header>
+                <Header>The Hitchhiker's Guide<br />to Sanity</Header>
                 <Timer>
-                    <div>{`${this.state.minutes}m ${this.state.seconds}s`}</div>
+                    <div>{`${this.state.m}m ${this.state.s}s`}</div>
                     <div>
-                        <Control onClick={this.toggleControl}>
-                            {this.state.running ? "Stop" : "Start"}
-                        </Control>
+                        <Control onClick={this.toggleControl} running={this.state.running} />
                     </div>
                 </Timer>
-                <Presets>
-                    <Preset onClick={() => this.setTimer({ minutes: 5 })}>
-                        5m
-                    </Preset>
-                    <Preset onClick={() => this.setTimer({ minutes: 10 })}>
-                        10m
-                    </Preset>
-                    <Preset onClick={() => this.setTimer({ seconds: 5 })}>
-                        5s
-                    </Preset>
-                </Presets>
+                <div>
+                    <PresetRow>
+                        <Preset
+                            timer={{ m: 5 }}
+                            id={1}
+                            checked
+                            setTimer={this.setTimer.bind(this)}
+                        />
+                        <Preset
+                            timer={{ m: 10 }}
+                            id={2}
+                            setTimer={this.setTimer.bind(this)}
+                        />
+                    </PresetRow>
+                    <PresetRow>
+                        <Preset
+                            timer={{ m: 15 }}
+                            id={3}
+                            setTimer={this.setTimer.bind(this)}
+                        />
+                        <Preset
+                            timer={{ s: 5 }}
+                            id={4}
+                            setTimer={this.setTimer.bind(this)}
+                        />
+                    </PresetRow>
+                </div>
             </Wrapper>
         );
     }
